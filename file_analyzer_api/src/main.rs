@@ -8,10 +8,11 @@ use axum::{
 };
 
 use clap::Parser;
-use file_utils::{analyze_path, find_word, Analysis, FileStats};
-use serde::{Deserialize, Serialize};
+use file_utils::{analyze_path, find_word};
+use serde::Deserialize;
 use serde_json::json;
 use std::net::SocketAddr;
+use tokio::io;
 
 #[derive(Parser)]
 struct Args {
@@ -28,11 +29,6 @@ struct AnalyzeQuery {
 struct SearchQuery {
     path: String,
     word: String,
-}
-
-#[derive(Serialize)]
-struct ErrorResponse {
-    error: String,
 }
 
 async fn analyze(Query(params): Query<AnalyzeQuery>) -> impl IntoResponse {
@@ -87,7 +83,7 @@ async fn search(Query(params): Query<SearchQuery>) -> impl IntoResponse {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> io::Result<()> {
     let args = Args::parse();
 
     let app = Router::new()
@@ -96,11 +92,11 @@ async fn main() {
     let addr = SocketAddr::from(([127, 0, 0, 1], args.port));
     println!("server running on http://{}", addr);
     axum::serve(
-        tokio::net::TcpListener::bind(addr).await.unwrap(),
+        tokio::net::TcpListener::bind(addr).await?,
         app.into_make_service(),
     )
-    .await
-    .unwrap();
+    .await?;
+    Ok(())
 }
 
 mod file_utils;
