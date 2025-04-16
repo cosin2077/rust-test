@@ -1,8 +1,9 @@
-use serde::Serialize;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-// use std::io::{self};
 use std::fs::Metadata;
 use std::path::{Path, PathBuf};
+use time::OffsetDateTime;
 use tokio::fs::{self, File};
 use tokio::io::{self, AsyncReadExt};
 
@@ -14,6 +15,19 @@ pub struct FileStats {
     pub char_count: usize,
     pub unique_words: usize,
     pub word_frequency: HashMap<String, usize>,
+}
+
+#[derive(Serialize, Deserialize, Debug, sqlx::FromRow)]
+pub struct DbFileStats {
+    pub id: i32,
+    pub path: String,
+    pub word_count: i32,
+    pub line_count: i32,
+    pub char_count: i32,
+    pub unique_words: i32,
+    #[sqlx(try_from = "serde_json::Value")]
+    pub word_frequency: serde_json::Value,
+    pub analyzed_at: OffsetDateTime,
 }
 
 #[derive(Serialize)]
